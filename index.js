@@ -36,11 +36,14 @@ app.get("/", (req, res)=>{
 
 app.get("/post/:id", (req, res)=>{
     let postId = req.params.id
-    if (!ads[postId]) {
-        res.render("notFound")
-        return
-    }
-    res.render("post", {product: ads[postId]})
+    db.query(`SELECT * FROM products WHERE id = ?`, postId, (err, result)=>{
+        if (err || result.length == 0){
+            return res.status(404).render("notFound")
+        }
+        let product = result[0]
+        product.image = JSON.parse(product.image)
+        res.status(200).render("post", {product})
+    })
 })
 
 app.post("/add", upload.fields([{name: "image"}]), (req, res)=>{
@@ -53,13 +56,24 @@ app.post("/add", upload.fields([{name: "image"}]), (req, res)=>{
         res.status(201)
         res.send({status: "ok"})
     })
-
-
 })
+
+
+app.post("/comment", (req, res)=>{
+    let data = req.body
+    console.log(data)
+    db.query(`INSERT INTO comments SET ?`, data, (err, result)=>{
+        if (err) res.status(500)
+        res.end()
+    })
+})
+
+
+
 
 app.use((req, res, next)=>{
     res.status(404)
     res.render("notFound")
 })
 
-app.listen(3000, ()=>console.log("Server on!"))
+app.listen(3001, ()=>console.log("Server on!"))
